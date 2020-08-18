@@ -1,0 +1,4 @@
+#!/bin/bash
+
+makeProjectHelper.py $1 > /tmp/makeproject
+source /tmp/makeproject

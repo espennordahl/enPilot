@@ -23,8 +23,8 @@ if __name__ == "__main__":
     project = Project(args.project)
 
     if args.shotasset == "":
-        os.environ["PROJECT"] = args.project
-        print(project.path)
+        print("export PROJECT={}".format(args.project))
+        print("cd {}".format(project.path))
     else:
         asset = None
         if args.shotasset in project.assets:
@@ -36,8 +36,7 @@ if __name__ == "__main__":
             logging.error("Could not find {} in shots or assets".format(args.shotasset))
             raise Exception
 
-        os.environ["PROJECT"] = args.project
-        os.environ["ASSET"] = args.shotasset
-
-        print(asset.path)
+        print("export PROJECT={}".format(args.project))
+        print("export ASSET={}".format(args.shotasset))
+        print("cd {}".format(asset.path))
 

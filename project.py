@@ -3,20 +3,23 @@ import os
 import json
 import datetime
 
-from .core import Asset, Shot
+from enPilot.core import Asset, Shot
 
 logger = logging.getLogger(__name__)
 
 class Project:
     def __init__(self, name):
         self._name = name
+        self.shots = {}
+        self.assets = {}
         if self._isProjectOnDisk():
             self._initFromDisk()
-        else:
-            self.shots = {}
-            self.assets = {}
 
     def _initFromDisk(self):
+        for asset in [x for x in os.listdir(self.assetsDir) if os.path.isdir(os.path.join(self.path, x))]:
+            self.assets[asset] = Asset(asset)
+        for shot in [x for x in os.listdir(self.shotsDir) if os.path.isdir(os.path.join(self.path, x))]:
+            self.shots[shot] = Shot(shot)
         return
 
     @classmethod
@@ -35,6 +38,21 @@ class Project:
         ## TODO: Check validity of project
         return projectList
 
+    @classmethod
+    def mainConfigFileName(cls):
+        return "project.json"
+
+    @property
+    def assetsDir(self):
+        return os.path.join(self.path, "assets")
+
+    @property
+    def shotsDir(self):
+        return os.path.join(self.path, "shots")
+
+    @property
+    def configDir(self):
+        return os.path.join(self.path, "config")
 
     @property
     def exists(self):
@@ -76,16 +94,17 @@ class Project:
         return data
 
     def _isProjectOnDisk(self):
-        return self.name in self.listProjects()
+        return self.name in Project.listProjects()
 
+    @property
     def path(self):
-        projectRoot = os.path.join(Project.rootDir(), self.name)
- 
-    def createOnDisk(self):
-        if self._isProjectOnDisk:
-            logger.warning("Can't create project {} on disk, it already exists".format(self.name))
-            return False
+        return os.path.join(Project.projectsDir(), self.name)
 
+
+    def syncToDisk(self):
+        return self.createOnDisk()
+
+    def createOnDisk(self):
         self._createBaseDirs()
         self._createConfigs()
         self._createAssets()
@@ -97,11 +116,8 @@ class Project:
         ## Create main project
         projectRoot = self.path 
         
-        if os.path.exists(projectRoot):
-            logger.error("Project directory already exists")
-            raise Exception
-
-        os.mkdir(projectRoot)
+        if not os.path.exists(projectRoot):
+            os.mkdir(projectRoot)
 
         ## Create all root dirs
         basedirs = ["assets",
@@ -109,27 +125,28 @@ class Project:
                     "config",
                     "sandbox"]
         for directory in basedirs:
-            os.mkdir(os.path.join(projectRoot, directory))
+            makedir = os.path.join(projectRoot, directory)
+            if not os.path.exists(makedir):
+                os.mkdir(makedir)
 
     def _createConfigs(self):
         data = self.serialize()
 
         self._backupConfigs()
 
-        with open(self._mainConfigFilePath, "w") as outfile:
+        with open(self._mainConfigFilePath(), "w") as outfile:
             json.dump(data, outfile, indent=4)
 
     def _mainConfigFilePath(self):
-        return os.path.join(self.rootDir, "config", Project.mainConfigFileName)
+        return os.path.join(self.path, "config", Project.mainConfigFileName())
 
     def _backupConfigs(self):
-        configFolder = os.path.join(self.rootDir, "config")
-        if not os.path.exists(configFolder):
+        if not os.path.exists(self.configDir):
             return False
         
-        backupFolder = os.path.join(configFolder, "backup", datetime.datetime.now().isoformat())
-        for filename in [x for x in os.listDir(configFolder) if os.path.isdir(os.path.join(configFolder,x))]:
-            os.copy(os.path.join(configFolder,filename), os.path.join(backupFolder, filename))
+        backupFolder = os.path.join(self.configDir, "backup", datetime.datetime.now().isoformat())
+        for filename in [x for x in os.listdir(self.configDir) if os.path.isdir(os.path.join(self.configDir,x))]:
+            os.copy(os.path.join(self.configDir,filename), os.path.join(backupFolder, filename))
 
     def _createAssets(self):
         for asset in self.assets.values():
@@ -140,6 +157,5 @@ class Project:
             shot.createOnDisk()
 
     def _validateFileStructure(self):
-        projectRoot = os.path.join(Project.rootDir(), self.name)
-        return os.path.exists(projectRoot)
+        return os.path.exists(self.path)
  

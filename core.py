@@ -1,4 +1,5 @@
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,16 @@ class Asset(Base):
             return None
         return os.path.join(self.project.path, "assets", self.name)
 
+    def createOnDisk(self):
+        rootpath = os.path.join(self.project.assetsDir, self.name)
+        if not os.path.exists(rootpath):
+            os.mkdir(rootpath)
+        for folder in ["maya", "houdini", "nuke", "sandbox"]:
+            swpath = os.path.join(rootpath, folder)
+            if not os.path.exists(swpath):
+                os.mkdir(swpath)
+
+
 
 class Shot(Base):
     pass
@@ -47,5 +58,14 @@ class Shot(Base):
         if not self.project:
             return None
         return os.path.join(self.project.path, "shots", self.name)
+
+    def createOnDisk(self):
+        rootpath = os.path.join(self.project.shotsDir, self.name)
+        if not os.path.exists(rootpath):
+            os.mkdir(rootpath)
+        for folder in ["maya", "houdini", "nuke", "sandbox"]:
+            swpath = os.path.join(rootpath, folder)
+            if not os.path.exists(swpath):
+                os.mkdir(swpath)
 
 

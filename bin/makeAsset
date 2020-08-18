@@ -1,0 +1,4 @@
+#!/bin/bash
+
+makeAssetHelper.py $1 > /tmp/makeasset
+source /tmp/makeasset

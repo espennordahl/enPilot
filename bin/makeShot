@@ -1,0 +1,4 @@
+#!/bin/bash
+
+makeShotHelper.py $1 > /tmp/makeshot
+source /tmp/makeshot
