@@ -3,7 +3,7 @@ import os
 import json
 import datetime
 
-from core import Asset, Shot
+from .core import Asset, Shot
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +52,12 @@ class Project:
 
     def addShot(self, shot):
         ## TODO: Check for string vs Shot object
+        shot.project = self
         self.shots[shot.name] = shot
 
     def addAsset(self, asset):
         ## TODO: Check for string vs Asset object
+        asset.project = self
         self.assets[asset.name] = asset
 
     def serialize(self):
@@ -76,6 +78,9 @@ class Project:
     def _isProjectOnDisk(self):
         return self.name in self.listProjects()
 
+    def path(self):
+        projectRoot = os.path.join(Project.rootDir(), self.name)
+ 
     def createOnDisk(self):
         if self._isProjectOnDisk:
             logger.warning("Can't create project {} on disk, it already exists".format(self.name))
@@ -90,7 +95,7 @@ class Project:
 
     def _createBaseDirs(self):
         ## Create main project
-        projectRoot = os.path.join(Project.rootDir(), self.name)
+        projectRoot = self.path 
         
         if os.path.exists(projectRoot):
             logger.error("Project directory already exists")
